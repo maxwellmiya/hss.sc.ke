@@ -5,6 +5,31 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // ── Security: Input Sanitization ──
+  function sanitizeInput(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function validatePhone(phone) {
+    return !phone || /^[\d\s\+\-\(\)]+$/.test(phone);
+  }
+
+  function containsSuspiciousPatterns(str) {
+    const patterns = [
+      /<script/i, /javascript:/i, /on\w+\s*=/i,
+      /union\s+select/i, /insert\s+into/i, /drop\s+table/i,
+      /delete\s+from/i, /update\s+.*set/i, /exec\s*\(/i,
+      /<iframe/i, /<object/i, /<embed/i, /eval\s*\(/i
+    ];
+    return patterns.some(p => p.test(str));
+  }
+
   // ── Preloader ──
   const preloader = document.querySelector('.preloader');
   if (preloader) {
@@ -313,21 +338,55 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Active nav link highlighting ──
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
   const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-link');
   navLinks.forEach(link => {
     const href = link.getAttribute('href');
-    if (href === currentPage || (currentPage === '' && href === 'index.html')) {
+    if (href === currentPath || (currentPath === '/' && href === '/') || (currentPath === '' && href === '/')) {
       link.classList.add('active');
     }
   });
 
-  // ── Form handling ──
+  // ── Form handling (with XSS & injection protection) ──
   const contactForm = document.querySelector('.contact-form');
   if (contactForm) {
     contactForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const btn = contactForm.querySelector('button[type="submit"]');
+      const form = contactForm.querySelector('form') || contactForm;
+
+      // Gather and sanitize all inputs
+      const nameInput = form.querySelector('#name');
+      const emailInput = form.querySelector('#email');
+      const phoneInput = form.querySelector('#phone');
+      const messageInput = form.querySelector('#message');
+
+      // Validate email format
+      if (emailInput && !validateEmail(emailInput.value.trim())) {
+        alert('Please enter a valid email address.');
+        emailInput.focus();
+        return;
+      }
+
+      // Validate phone format
+      if (phoneInput && !validatePhone(phoneInput.value.trim())) {
+        alert('Please enter a valid phone number.');
+        phoneInput.focus();
+        return;
+      }
+
+      // Check for suspicious/malicious patterns
+      const allInputs = [nameInput, emailInput, phoneInput, messageInput].filter(Boolean);
+      for (const input of allInputs) {
+        if (containsSuspiciousPatterns(input.value)) {
+          alert('Invalid characters detected. Please remove any special code from your input.');
+          input.focus();
+          return;
+        }
+        // Sanitize the value
+        input.value = sanitizeInput(input.value.trim());
+      }
+
       const originalText = btn.textContent;
       btn.textContent = 'Sending...';
       btn.disabled = true;
@@ -335,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         btn.textContent = '✓ Message Sent!';
         btn.style.background = '#4caf50';
-        contactForm.reset();
+        (form.tagName === 'FORM' ? form : contactForm.querySelector('form'))?.reset();
 
         setTimeout(() => {
           btn.textContent = originalText;
@@ -346,13 +405,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Newsletter form ──
+  // ── Newsletter form (with validation) ──
   const newsletterForms = document.querySelectorAll('.newsletter-form');
   newsletterForms.forEach(form => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const input = form.querySelector('input');
       if (input) {
+        const email = input.value.trim();
+        if (!validateEmail(email)) {
+          input.value = '';
+          input.placeholder = '✗ Invalid email';
+          setTimeout(() => { input.placeholder = 'Your email address'; }, 2000);
+          return;
+        }
+        if (containsSuspiciousPatterns(email)) {
+          input.value = '';
+          input.placeholder = '✗ Invalid input';
+          setTimeout(() => { input.placeholder = 'Your email address'; }, 2000);
+          return;
+        }
         input.value = '';
         input.placeholder = '✓ Subscribed!';
         setTimeout(() => {
