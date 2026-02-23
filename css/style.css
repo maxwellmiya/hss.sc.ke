@@ -1740,6 +1740,59 @@ p {
   align-items: start;
 }
 
+/* Dual Deputy Principal Messages */
+.dp-messages-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+}
+
+.dp-message-card {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.dp-message-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.dp-message-photo {
+  position: relative;
+  overflow: hidden;
+}
+
+.dp-message-body {
+  padding: 2rem;
+}
+
+.dp-message-body blockquote {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--primary);
+  border-left: 3px solid var(--secondary);
+  padding-left: 1rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.6;
+}
+
+.dp-message-body p {
+  color: var(--text-light);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.dp-message-body .message-signature {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
 .message-photo {
   border-radius: var(--border-radius);
   overflow: hidden;
@@ -2718,6 +2771,10 @@ p {
   }
 
   .message-section {
+    grid-template-columns: 1fr;
+  }
+
+  .dp-messages-grid {
     grid-template-columns: 1fr;
   }
 
